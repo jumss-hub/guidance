@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soothing Mini-Games</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f0f8ff; 
+            color: #333; 
+            min-height: 100vh; 
+            padding-bottom: 150px; 
+        }
+        h1, h2 { text-align: center; }
+        .game-container { 
+            display: flex; 
+            justify-content: space-around; 
+            flex-wrap: wrap; 
+            padding: 20px; 
+            margin-bottom: 40px; 
+        }
+        .game { 
+            border: 2px solid #4a76a8; 
+            border-radius: 8px; 
+            padding: 10px; 
+            margin: 10px; 
+            width: 200px; 
+            text-align: center; 
+            background-color: #e6f7ff; 
+        }
+        #colorCanvas, #sandCanvas, #fruitCanvas { 
+            border: 1px solid #4a76a8; 
+            margin-top: 10px; 
+            cursor: pointer; 
+        }
+        .back-button { 
+            display: block; 
+            margin: 20px auto; 
+            padding: 10px 20px; 
+            background-color: #4a76a8; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            text-align: center; 
+            font-size: 16px; 
+        }
+        .back-button:hover { 
+            background-color: #3a5b8a; 
+        }
+    </style>
+</head>
+<body>
+
+<h1>Space for relaxation and joy!</h1>
+
+<a href="support.html" class="back-button">Back</a>
+
+<div class="game-container">
+    <div class="game">
+        <h2>Zen Garden Creator</h2>
+        <p>Water your plant to help it grow.</p>
+        <button id="waterButton">Water Plant</button>
+        <div id="garden" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="game">
+        <h2>Color by Nature</h2>
+        <p>Relax with a digital coloring book.</p>
+        <canvas id="colorCanvas" width="200" height="200"></canvas>
+        <div>
+            <button onclick="changeColor('red')">Red</button>
+            <button onclick="changeColor('green')">Green</button>
+            <button onclick="changeColor('blue')">Blue</button>
+            <button onclick="changeColor('yellow')">Yellow</button>
+        </div>
+    </div>
+
+    <div class="game">
+        <h2>Calm Puzzles</h2>
+        <p>Solve easy puzzles.</p>
+        <div id="puzzleContainer">
+            <p id="puzzleQuestion"></p>
+            <button onclick="startPuzzle()">Start Puzzle</button>
+            <div id="puzzle" style="display:none;">
+                <input type="text" id="puzzleInput" placeholder="Your answer...">
+                <button onclick="checkPuzzle()">Check</button>
+                <p id="puzzleResult"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="game">
+        <h2>Garden of Thoughts</h2>
+        <p>Draw patterns in the sand.</p>
+        <canvas id="sandCanvas" width="200" height="200" onclick="drawInSand(event)"></canvas>
+    </div>
+
+    <div class="game">
+        <h2>Fruit Cutting</h2>
+        <p>Cut the fruits as they appear!</p>
+        <canvas id="fruitCanvas" width="200" height="200" onclick="cutFruit(event)"></canvas>
+        <button onclick="startFruitGame()">Start Cutting</button>
+        <p id="fruitScore">Score: 0</p>
+    </div>
+
+    <div class="game">
+        <h2>Soothing Sounds Scape</h2>
+        <p>Mix nature sounds for relaxation.</p>
+        <button onclick="playSounds()">Play Sounds</button>
+    </div>
+</div>
+
+<script>
+    let plantSize = 1;
+    const maxSize = 5; 
+    let growing = false;
+
+    const quotes = [
+        "Bloom where you are planted.",
+        "The greatest gift of the garden is the restoration of the five senses.",
+        "To plant a garden is to believe in tomorrow.",
+        "Gardening adds years to your life and life to your years.",
+        "In every gardener there is a child who believes in The Seed Fairy."
+    ];
+
+    document.getElementById('waterButton').addEventListener('click', waterPlant);
+
+    function waterPlant() {
+        const now = new Date();
+        const lastWatered = localStorage.getItem('lastWatered');
+        
+        if (lastWatered) {
+            const lastWateredDate = new Date(lastWatered);
+            const timeDiff = now - lastWateredDate;
+
+            
+            if (timeDiff < 24 * 60 * 60 * 1000) {
+                alert("You can only water your plant every 24 hours, come back tomorrow!.");
+                return;
+            }
+        }
+
+        if (growing || plantSize >= maxSize) return;
+        growing = true;
+        const garden = document.getElementById('garden');
+        
+        const plant = document.createElement('span');
+        plant.textContent = '🌱';
+        plant.classList.add('plant');
+        plant.style.transform = `scale(${plantSize})`;
+        garden.innerHTML = ''; 
+        garden.appendChild(plant);
+        
+        const growInterval = setInterval(() => {
+            if (plantSize < maxSize) {
+                plantSize += 0.1; 
+                plant.style.transform = `scale(${plantSize.toFixed(1)})`;
+            } else {
+                clearInterval(growInterval);
+                growing = false;
+                plant.textContent = '🌳'; 
+                plant.style.cursor = 'pointer';
+                plant.onclick = () => {
+                    removePlant();
+                };
+                
+                displayFruitWithQuote(garden);
+               
+                localStorage.setItem('lastWatered', now.toISOString());
+            }
+        }, 500);
+    }
+
+    function displayFruitWithQuote(garden) {
+        const fruit = document.createElement('div');
+        fruit.innerHTML = '🍎 <br><strong>Quote:</strong> ' + quotes[Math.floor(Math.random() * quotes.length)];
+        fruit.style.fontSize = '30px';
+        garden.appendChild(fruit);
+    }
+
+    function removePlant() {
+        const garden = document.getElementById('garden');
+        garden.innerHTML = ''; 
+        plantSize = 1; 
+    }
+
+   
+    let currentColor = 'black';
+    const canvas = document.getElementById('colorCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        ctx.fillStyle = currentColor;
+        ctx.fillRect(x - 10, y - 10, 20, 20);
+    });
+
+    function changeColor(color) {
+        currentColor = color;
+    }
+
+   
+    const questions = [
+        { question: "What color is the sun?", answer: "yellow" },
+        { question: "What do bees make?", answer: "honey" },
+        { question: "What is the capital of France?", answer: "paris" },
+        { question: "How many legs does a spider have?", answer: "eight" },
+        { question: "What is the largest planet?", answer: "jupiter" },
+        { question: "What do you call a baby cat?", answer: "kitten" },
+        { question: "What is the opposite of cold?", answer: "hot" },
+        { question: "How many colors are in a rainbow?", answer: "seven" },
+        { question: "What fruit is yellow and curved?", answer: "banana" },
+        { question: "What do you use to write on a chalkboard?", answer: "chalk" },
+        { question: "What is the tallest animal?", answer: "giraffe" },
+        { question: "What shape is a stop sign?", answer: "octagon" },
+        { question: "What is the main ingredient in guacamole?", answer: "avocado" },
+        { question: "What is a baby dog called?", answer: "puppy" },
+        { question: "What do you wear on your feet?", answer: "shoes" },
+        { question: "What is the color of grass?", answer: "green" },
+        { question: "What is the capital of Japan?", answer: "tokyo" },
+        { question: "How many sides does a triangle have?", answer: "three" },
+        { question: "What animal is known as man's best friend?", answer: "dog" },
+        { question: "What do you call a frozen water?", answer: "ice" },
+        { question: "What is the fastest land animal?", answer: "cheetah" }
+    ];
+
+    function startPuzzle() {
+        const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+        document.getElementById('puzzleQuestion').innerText = randomQuestion.question;
+        document.getElementById('puzzle').style.display = 'block';
+        document.getElementById('puzzleInput').value = '';
+        document.getElementById('puzzleResult').innerText = '';
+        document.getElementById('puzzleInput').dataset.answer = randomQuestion.answer;
+    }
+
+    function checkPuzzle() {
+        const userAnswer = document.getElementById('puzzleInput').value.toLowerCase();
+        const correctAnswer = document.getElementById('puzzleInput').dataset.answer;
+        const resultText = userAnswer === correctAnswer ? "Correct!" : "Try again!";
+        document.getElementById('puzzleResult').innerText = resultText;
+    }
+
+    // Zen Sand Garden Logic
+    function drawInSand(event) {
+        const canvas = document.getElementById('sandCanvas');
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        ctx.fillStyle = '#d9d9d9';
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2, true); 
+        ctx.fill();
+    }
+
+    
+    let fruitScore = 0;
+    let fruitInterval;
+    const fruits = ['🍎', '🍌', '🍇', '🍉', '🍊', '🍍'];
+
+    function startFruitGame() {
+        fruitScore = 0;
+        document.getElementById('fruitScore').innerText = `Score: ${fruitScore}`;
+        clearInterval(fruitInterval);
+        spawnFruit();
+    }
+
+    function spawnFruit() {
+        const canvas = document.getElementById('fruitCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+
+        const randomFruit = fruits[Math.floor(Math.random() * fruits.length)];
+        const x = Math.random() * (canvas.width - 40) + 20;
+        const y = Math.random() * (canvas.height - 40) + 20; 
+
+        ctx.font = '30px Arial';
+        ctx.fillText(randomFruit, x, y);
+
+        fruitInterval = setTimeout(spawnFruit, 1000); 
+    }
+
+    function cutFruit(event) {
+        const canvas = document.getElementById('fruitCanvas');
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+      
+        fruitScore++;
+        document.getElementById('fruitScore').innerText = `Score: ${fruitScore}`;
+    }
+
+    
+    function playSounds() {
+        alert("Playing soothing nature sounds...");
+    }
+</script>
+
+</body>
+</html>
